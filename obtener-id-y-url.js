@@ -11,22 +11,22 @@ function extraerIdDeUrl(url) {
   return match ? match[1] : null;
 }
 
-function obtenerUrl(fila) {
+function obtenerUrl(columna,fila) {
   if (typeof fila !== 'number' || fila < 1) return null; // Validación
-  
+
   const hoja = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  const celda = hoja.getRange(`H${fila}`);
-  
+  const celda = hoja.getRange(`${columna}${fila}`);
+
   return celda.isBlank() ? null : celda.getValue();
 }
 
-function obtenerIdDesdeFila(fila) {
-  const url = obtenerUrl(fila); // Usa la función corregida
+function obtenerIdDesdeCelda(columna, fila) {
+  const url = obtenerUrl(columna, fila); // Usa la función corregida
   return url ? extraerIdDeUrl(url) : null;
 }
 
 function test() {
-  console.log(obtenerUrl(2)); // Devuelve el contenido de H2 o null
+  console.log(obtenerUrl("L",3)); // Devuelve el contenido de H2 o null
   console.log(extraerIdDeUrl("https://drive.google.com/file/d/ABC123/edit")); // "ABC123"
-  console.log(obtenerIdDesdeFila(2)); // ID extraído de H2 o null
+  console.log(obtenerIdDesdeCelda("L",3)); // ID extraído de H2 o null
 }
