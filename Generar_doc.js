@@ -1,96 +1,86 @@
+function onOpen() {
+  //Crea el menu cada vez que se abre el documento
+  SpreadsheetApp.getUi().createMenu("Generar Notas")
+    // Agrega una opción en el menú - "Nombre del comando" , "Nombre de la funnción que ejecuta"
+    .addItem("Generar Notas", "generarNotas")
+    .addItem("Ver Fecha Actual", "MensajeUi")
+
+    .addToUi()
+}
+function mensajeUi() {
+  const fecha = obtenerFecha();
+  const boton = "ACEPTAR";
+  generarMensajeUi(fecha, boton);
+
+}
+
 function generarNotas() {
-  var ui = SpreadsheetApp.getUi();
+  const ui = SpreadsheetApp.getUi();
+  const respuesta = ui.alert("Pulsa SI para generar los documentos", ui.ButtonSet.YES_NO);
 
-  //ventana de alerta
-  var respuesta = ui.alert(
-    "Pulsa SI para generar los documentos",
-    ui.ButtonSet.YES_NO
-  );
-  if (respuesta == ui.Button.YES) {
-    //Obteniendo el documento de origen
-    var docActual = DriveApp.getFileById(
-      "1QTg9l6MXE7bnqUXix8p-MRAe3gW1fQKj_ernJ9X0R5g"
-    );
+  if (respuesta !== ui.Button.YES) {
+    return ui.alert("Se ha cancelado la generación de documentos");
+  }
+  const id = obtenerIdDesdeFila(3);
+  const docActual = DriveApp.getFileById(id);
+  const hojaActual = SpreadsheetApp.getActive().getActiveSheet();
+  const ultimaFila = hojaActual.getLastRow();
 
-    var hojaActual = SpreadsheetApp.getActive();
-    var fila = 2;
-    var nombreCelda = "A" + fila;
-    var celdaActual = hojaActual.getRange(nombreCelda);
-    var docGenerados = 0;
+  let fila = 2;
+  let docGenerados = 0;
+  let carpeta; // Declarada fuera del while
+  let fecha = obtenerFecha();
 
-    //Comprobamos si la celda no esta vacia
-    //isBlank() devuelve true si la celda esta vacia
-    //si no esta vacia se ejecuta el bucle
-    //signo de admiracion indica negacion
-    while (!celdaActual.isBlank()) {
-      if (hojaActual.getRange("C" + fila).getValue() != true) {
-        //incremento contador
-        docGenerados++;
+  for (let fila = 2; fila <= ultimaFila; fila++) {
+    const datosFila = hojaActual.getRange(`A${fila}:H${fila}`).getValues()[0];
+    const [municipio, nombre, procesado, , email, tratamiento, cargo] = datosFila;
 
-        if (docGenerados == 1) {
-          //creamos una carpeta donde se generan los archivos
-          var idHoja = SpreadsheetApp.getActive().getId();
-          var carpetaPadre = DriveApp.getFileById(idHoja).getParents().next();
-          //si la condicion no se ejecuta la variable carpeta no se genera y da error
-          var carpeta = carpetaPadre.createFolder("Notas: " + new Date());
-        }
+    // Saltear si la fila está vacía (por ejemplo, si no hay nombre ni municipio)
+    if (!municipio || !nombre) {
+      continue;
+    }
 
-        //Crear Documento
-        var docNuevo = docActual.makeCopy("Nombre : " + celdaActual.getValue());
-        var documento = DocumentApp.openById(docNuevo.getId());
-        //openById(docNuevo.getId());
+    let ala = determinarTratamiento(tratamiento);
 
-                //reemplazar los datos
-        documento
-          .getBody()
-          .replaceText(
-            "<<municipio>>",
-            hojaActual.getRange("A" + fila).getValue()
-          );
-        documento
-          .getBody()
-          .replaceText(
-            "<<nombre>>",
-            hojaActual.getRange("B" + fila).getValue()
-          );
+    if (procesado !== true) {
+      docGenerados++;
 
-        //añadir check box
-        hojaActual.getRange("C" + fila).insertCheckboxes();
+      if (docGenerados === 1) {
+        const idHoja = SpreadsheetApp.getActive().getId();
+        carpeta = DriveApp.getFileById(idHoja).getParents().next()
+          .createFolder(`Notas: ${fecha}`);
+        hojaActual.getRange("M4").setValue(`Carpeta: ${carpeta.getName()}`);
+        hojaActual.getRange("L4").setValue(carpeta.getUrl());
 
-        //marcar check
-        hojaActual.getRange("C" + fila).setValue("true");
-
-        //Anadir fecha
-        hojaActual.getRange("D" + fila).setValue(new Date());
-
-        //convertimos en PDF
-        documento.saveAndClose();
-        var docPdf = documento.getAs("application/pdf");
-        docPdf.setName(documento.getName() + ",pdf");
-        var docNuevoPdf = DriveApp.createFile(docPdf);
-
-        //Guardar el los documentos en la carpeta
-        docNuevo.moveTo(carpeta);
-        docNuevoPdf.moveTo(carpeta);
       }
 
-      //Bajamos una fila
-      fila++;
-      nombreCelda = "A" + fila;
-      celdaActual = hojaActual.getRange(nombreCelda);
-    }
+      const docNuevo = docActual.makeCopy(`Nota - ${municipio} - ${fecha}`);
+      const documento = DocumentApp.openById(docNuevo.getId());
+      const body = documento.getBody();
 
-    if (docGenerados > 0) {
-      ui.alert(
-        "Se han creados correctamente " +
-          docGenerados +
-          " documentos con sus respectivos PDF"
-      );
-    } else {
-      ui.alert("NO Se han encontrado datos para generar documentos");
+      body.replaceText("<<fecha>>", fecha);
+      body.replaceText("<<ala>>", ala);
+      body.replaceText("<<municipio>>", municipio);
+      body.replaceText("<<nombre>>", nombre);
+      body.replaceText("<<tratamiento>>", tratamiento);
+      body.replaceText("<<cargo>>", cargo);
+
+      documento.saveAndClose();
+
+      const pdf = documento.getAs("application/pdf").setName(`${documento.getName()}.pdf`);
+      const pdfFile = DriveApp.createFile(pdf);
+
+      docNuevo.moveTo(carpeta);
+      pdfFile.moveTo(carpeta);
+
+      hojaActual.getRange(`H${fila}`).setValue(pdfFile.getUrl());
+
+      hojaActual.getRange(`C${fila}`).insertCheckboxes().setValue(true);
+      hojaActual.getRange(`D${fila}`).setValue(new Date());
     }
-  } else {
-    ui.alert("Se ha cancelado la generación de documentos");
   }
-  //fin de la funcion
+
+  ui.alert(docGenerados > 0
+    ? `Se han creado ${docGenerados} documentos correctamente.`
+    : "No se encontraron datos para procesar.");
 }
