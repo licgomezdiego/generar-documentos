@@ -76,3 +76,15 @@ function generarPlantillaHTML(nombre, cuerpoBase) {
   plantilla.cuerpo = cuerpoBase;
   return plantilla.evaluate().getContent();
 }
+
+// Ejemplo de la funcion dentro de un script de Google Apps
+// Enviar correo si el email es válido
+      if (email && isValidEmail(email)) {
+        enviarCorreo(
+          fila,
+          email,
+          `Invitación acto egresados del Sipted ${municipio}`,
+          `Felicitaciones ${nombre} por terminar el curso de: ${tratamiento}`,
+          pdfFile
+        );
+      }
