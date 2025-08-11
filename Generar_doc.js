@@ -21,12 +21,11 @@ function generarNotas() {
   if (respuesta !== ui.Button.YES) {
     return ui.alert("Se ha cancelado la generación de documentos");
   }
-  const id = obtenerIdDesdeFila(3);
+  const id = obtenerIdDesdeCelda("L", 3);
   const docActual = DriveApp.getFileById(id);
   const hojaActual = SpreadsheetApp.getActive().getActiveSheet();
   const ultimaFila = hojaActual.getLastRow();
 
-  let fila = 2;
   let docGenerados = 0;
   let carpeta; // Declarada fuera del while
   let fecha = obtenerFecha();
