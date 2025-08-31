@@ -41,17 +41,24 @@ function procesarFilas() {
 
   for (let i = 1; i < datos.length; i++) {
     const fila = i + 1; // Ajuste para la numeración de filas en Google Sheets
-    // Asumimos que los datos están en las columnas A a H
-    // A: Municipio, B: Nombre, C: Correo, D: Asunto, E: Cuerpo, F: ID del adjunto, G: Enviado
-    if (datos[i].length < 8) continue; // Verifica que haya suficientes columnas
-    const [ , nombre, correo, asunto, cuerpo, adjuntoId, enviado ] = datos[i];
 
-    if (enviado === true) continue;  // Ya fue enviado
+    // Detener si la fila C es falso (hay que revisar esta condicion para ver si es eficiente)
+    if (!datos[i][2]) break;
 
-    const adjunto = adjuntoId ? obtenerAdjuntoPorId(adjuntoId) : null;
-    const cuerpoPersonalizado = generarCuerpo(nombre, cuerpo);
+    if (datos[i].length < 8) continue; // Verifica que haya suficientes columnas (8 en este caso)
 
-    enviarCorreo(fila, correo, asunto, cuerpoPersonalizado, adjunto);
+    //Lee los datos en la fila y los almacena según este orden, al cambiar columnas hay que revisar
+    const [municipio, nombre, creado, fecha, correo, tratamiento, cargo, url, enviado] = datos[i];
+
+    if (enviado === true) continue;  // Si Ya fue enviado, pasa al siguiente
+    // obtiene el id de la url cargada en la planilla en la columna H
+    const adjuntoId = extraerIdDeUrl(url);
+
+    //const adjunto = adjuntoId ? obtenerAdjuntoPorId(adjuntoId) : null;
+    //const cuerpoPersonalizado = generarCuerpo(nombre, cuerpo);
+
+    //enviarCorreo(fila, correo, asunto, cuerpoPersonalizado, adjunto);
+    console.log(` fila: ${fila}, municipio: ${municipio} ,nombre: ${nombre}, creado: ${creado}, correo: ${correo} , tratamiento ${tratamiento}, cargo ${cargo}, id ${adjuntoId}, enviado ${enviado}`)
   }
 }
 // Crea una función para obtener el adjunto recibe el ID
