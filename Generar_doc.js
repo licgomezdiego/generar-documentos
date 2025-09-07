@@ -14,6 +14,24 @@ function mensajeUi() {
 
 }
 
+function determinarTratamiento(tratamiento) {
+  // Verificar si el parámetro es válido
+  if (!tratamiento || typeof tratamiento !== 'string') {
+    return "Estimado/a"; // Valor por defecto si no hay tratamiento
+  }
+
+  // Limpiar el texto y convertir a minúsculas
+  const textoLimpio = tratamiento.trim().toLowerCase();
+
+  // Verificar si termina en 'a' (para femenino)
+  if (textoLimpio.endsWith('a')) {
+    return "Estimada";
+  }
+
+  // Caso por defecto (masculino)
+  return "Estimado";
+}
+
 function generarNotas() {
   const ui = SpreadsheetApp.getUi();
   const respuesta = ui.alert("Pulsa SI para generar los documentos", ui.ButtonSet.YES_NO);
@@ -31,6 +49,7 @@ function generarNotas() {
   let carpeta; // Declarada fuera del while
   let fecha = obtenerFecha();
 
+  // Recorre las filas desde la 2 hasta la última fila con datos (descarta la fila de encabezado)
   for (let fila = 2; fila <= ultimaFila; fila++) {
     const datosFila = hojaActual.getRange(`A${fila}:H${fila}`).getValues()[0];
     const [municipio, nombre, procesado, , email, tratamiento, cargo] = datosFila;
