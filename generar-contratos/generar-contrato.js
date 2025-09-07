@@ -9,7 +9,7 @@ function generarContrato() {
 
     const id = obtenerIdDesdeHojaModelos();
     if (!id) {
-      throw new Error("No se pudo obtener el ID del documento plantilla desde la fila 3");
+      throw new Error("No se pudo obtener el ID del documento plantilla");
     }
 
     const docActual = DriveApp.getFileById(id);
@@ -18,8 +18,11 @@ function generarContrato() {
     const ultimaFila = hojaActual.getLastRow();
 
     let docGenerados = 0;
-    let carpeta = null;
+    let carpetasPorCoordinacion = {}; // Objeto para trackear carpetas por coordinación
     let fechaActual = obtenerFecha();
+    const idHoja = ss.getId();
+    const carpetaPadre = DriveApp.getFileById(idHoja).getParents().next();
+    const modelos = ss.getSheetByName("Modelos");
 
     for (let fila = 3; fila <= ultimaFila; fila++) {
       try {
@@ -41,20 +44,23 @@ function generarContrato() {
         let trato = determinarTratamiento(genero);
         docGenerados++;
 
-        // Crear carpeta solo para el primer documento
-        if (docGenerados === 1) {
-          const idHoja = SpreadsheetApp.getActive().getId();
+        // 🔥 GESTIÓN DINÁMICA DE CARPETAS POR COORDINACIÓN
+        let carpeta = carpetasPorCoordinacion[coordinacion];
+        
+        if (!carpeta) {
+          // Crear nueva carpeta para esta coordinación
           let nombreCarpeta = `Contratos de: ${coordinacion} - ${fechaActual}`;
-          const carpetaPadre = DriveApp.getFileById(idHoja).getParents().next();
           carpeta = crearCarpetaEnPadre(nombreCarpeta, carpetaPadre);
+          carpetasPorCoordinacion[coordinacion] = carpeta;
           
-          // informacion para tener el enlace a las carpetas
-          const modelos = ss.getSheetByName("Modelos");
-          // Insertar información de la carpeta
-          modelos.getRange("C2").setValue(`Carpeta: ${carpeta.getName()}`);
-          modelos.getRange("D2").setValue("Carpeta Padre: " + carpetaPadre.getName());
-          modelos.getRange("C3").setValue(carpetaPadre.getUrl());
-          modelos.getRange("D3").setValue(carpeta.getUrl());
+          Logger.log(`✅ Nueva carpeta creada para: ${coordinacion}`);
+          
+          // Actualizar información de carpetas (solo para la primera coordinación o según necesites)
+          if (Object.keys(carpetasPorCoordinacion).length === 1) {
+            modelos.getRange("C2").setValue(`Carpetas creadas: ${Object.keys(carpetasPorCoordinacion).length}`);
+            modelos.getRange("D2").setValue("Carpeta Padre: " + carpetaPadre.getName());
+            modelos.getRange("C3").setValue(carpetaPadre.getUrl());
+          }
         }
 
         // Crear y editar documento
@@ -80,7 +86,6 @@ function generarContrato() {
         body.replaceText("<<CUOTAS>>", cuotas.toString());
         body.replaceText("<<MONTO_CUOTAS_NUMERO>>", montoCuotasNumero.toString());
         body.replaceText("<<MONTO_CUOTAS_LETRA>>", montoCuotasLetras);
-        //body.replaceText("<<FECHA>>", Utilities.formatDate(fecha, Session.getScriptTimeZone(), "dd/MM/yyyy"));
 
         documento.saveAndClose();
 
@@ -95,12 +100,29 @@ function generarContrato() {
       } catch (errorFila) {
         Logger.log(`Error en fila ${fila}: ${errorFila.toString()}`);
         hojaActual.getRange(`U${fila}`).setValue(`Error: ${errorFila.message}`);
-        continue; // Continuar con la siguiente fila
+        continue;
       }
     }
 
+    // 🔥 MOSTRAR INFO DE TODAS LAS CARPETAS CREADAS
     if (docGenerados > 0) {
-      ui.alert(`✅ Se han creado ${docGenerados} contratos correctamente.`);
+      let mensaje = `✅ Se han creado ${docGenerados} contratos en ${Object.keys(carpetasPorCoordinacion).length} carpeta(s):\n\n`;
+      
+      for (const [coordinacion, carpeta] of Object.entries(carpetasPorCoordinacion)) {
+        mensaje += `📁 ${coordinacion}: ${carpeta.getUrl()}\n`;
+      }
+      
+      // Guardar todos los enlaces en la hoja Modelos
+      let row = 4;
+      modelos.getRange("C4:D" + (row + Object.keys(carpetasPorCoordinacion).length)).clearContent();
+      
+      for (const [coordinacion, carpeta] of Object.entries(carpetasPorCoordinacion)) {
+        modelos.getRange(`C${row}`).setValue(coordinacion);
+        modelos.getRange(`D${row}`).setValue(carpeta.getUrl());
+        row++;
+      }
+      
+      ui.alert(mensaje);
     } else {
       ui.alert("ℹ️ No se encontraron datos para procesar.");
     }
