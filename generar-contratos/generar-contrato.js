@@ -1,18 +1,12 @@
 function generarContrato() {
   const ui = SpreadsheetApp.getUi();
-  
+
   try {
     const respuesta = ui.alert("Pulsa SI para generar los documentos", ui.ButtonSet.YES_NO);
     if (respuesta !== ui.Button.YES) {
       return ui.alert("Se ha cancelado la generación de documentos");
     }
 
-    const id = obtenerIdDesdeHojaModelos();
-    if (!id) {
-      throw new Error("No se pudo obtener el ID del documento plantilla");
-    }
-
-    const docActual = DriveApp.getFileById(id);
     const ss = SpreadsheetApp.getActive();
     const hojaActual = ss.getActiveSheet();
     const ultimaFila = hojaActual.getLastRow();
@@ -26,11 +20,11 @@ function generarContrato() {
 
     for (let fila = 3; fila <= ultimaFila; fila++) {
       try {
-        const datosFila = hojaActual.getRange(`A${fila}:U${fila}`).getValues()[0];
-        const [coordinacion, check, fecha, asistente, dni, cuil, domicilio, localidad, correo, expediente, nucleo, localidadNucleo, inicioVigencia, finVigencia, montoTotalNumero, montoTotalLetras, cuotas, montoCuotasNumero, montoCuotasLetras, genero, enlace] = datosFila;
+        const datosFila = hojaActual.getRange(`A${fila}:V${fila}`).getValues()[0];
+        const [coordinacion, check, fecha, asistente, dni, cuil, domicilio, localidad, correo, expediente, nucleo, localidadNucleo, inicioVigencia, finVigencia, montoTotalNumero, montoTotalLetras, cuotas, montoCuotasNumero, montoCuotasLetras, genero, enlace, tipoContrato] = datosFila;
 
         // Validar campos obligatorios
-        if (!coordinacion || !asistente || !dni || !cuil || !domicilio || !localidad || !correo || !expediente || !nucleo || !localidadNucleo || !inicioVigencia || !finVigencia || !montoTotalNumero || !montoTotalLetras || !cuotas || !montoCuotasNumero || !montoCuotasLetras || !genero) {
+        if (!coordinacion || !asistente || !dni || !cuil || !domicilio || !localidad || !correo || !expediente || !nucleo || !localidadNucleo || !inicioVigencia || !finVigencia || !montoTotalNumero || !montoTotalLetras || !cuotas || !montoCuotasNumero || !montoCuotasLetras || !genero || !tipoContrato) {
           hojaActual.getRange("U" + fila).setValue("Faltaron datos suficientes para generar el contrato");
           continue;
         }
@@ -46,15 +40,15 @@ function generarContrato() {
 
         // 🔥 GESTIÓN DINÁMICA DE CARPETAS POR COORDINACIÓN
         let carpeta = carpetasPorCoordinacion[coordinacion];
-        
+
         if (!carpeta) {
           // Crear nueva carpeta para esta coordinación
           let nombreCarpeta = `Contratos de: ${coordinacion} - ${fechaActual}`;
           carpeta = crearCarpetaEnPadre(nombreCarpeta, carpetaPadre);
           carpetasPorCoordinacion[coordinacion] = carpeta;
-          
+
           Logger.log(`✅ Nueva carpeta creada para: ${coordinacion}`);
-          
+
           // Actualizar información de carpetas (solo para la primera coordinación o según necesites)
           if (Object.keys(carpetasPorCoordinacion).length === 1) {
             modelos.getRange("C2").setValue(`Carpetas creadas: ${Object.keys(carpetasPorCoordinacion).length}`);
@@ -64,7 +58,13 @@ function generarContrato() {
         }
 
         // Crear y editar documento
-        const docNuevo = docActual.makeCopy(`Contrato de: ${asistente} - ${nucleo}`, carpeta);
+        const filaTipo = obtenerFilaPorTipo(tipoContrato)
+        const modeloId = obtenerIdDesdeHojaModelos(filaTipo);
+        if (!modeloId) {
+          throw new Error("No se pudo obtener el ID del documento plantilla");
+        }
+        const docBase = DriveApp.getFileById(modeloId);
+        const docNuevo = docBase.makeCopy(`Contrato de: ${asistente} - ${nucleo}`, carpeta);
         const documento = DocumentApp.openById(docNuevo.getId());
         const body = documento.getBody();
 
@@ -104,24 +104,24 @@ function generarContrato() {
       }
     }
 
-    // 🔥 MOSTRAR INFO DE TODAS LAS CARPETAS CREADAS
+    // MOSTRAR INFO DE TODAS LAS CARPETAS CREADAS
     if (docGenerados > 0) {
       let mensaje = `✅ Se han creado ${docGenerados} contratos en ${Object.keys(carpetasPorCoordinacion).length} carpeta(s):\n\n`;
-      
+
       for (const [coordinacion, carpeta] of Object.entries(carpetasPorCoordinacion)) {
         mensaje += `📁 ${coordinacion}: ${carpeta.getUrl()}\n`;
       }
-      
+
       // Guardar todos los enlaces en la hoja Modelos
       let row = 4;
       modelos.getRange("C4:D" + (row + Object.keys(carpetasPorCoordinacion).length)).clearContent();
-      
+
       for (const [coordinacion, carpeta] of Object.entries(carpetasPorCoordinacion)) {
         modelos.getRange(`C${row}`).setValue(coordinacion);
         modelos.getRange(`D${row}`).setValue(carpeta.getUrl());
         row++;
       }
-      
+
       ui.alert(mensaje);
     } else {
       ui.alert("ℹ️ No se encontraron datos para procesar.");
