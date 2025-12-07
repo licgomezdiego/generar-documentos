@@ -7,7 +7,7 @@ function obtenerFecha() {
   let dia = fecha.getDate();
   let mes = meses[fecha.getMonth()];
   let anio = fecha.getFullYear();
-  return dia + " de " + mes + " de " + anio;
+  return `${dia} de ${mes} de ${anio}`;
 }
 
 // Función para convertir números a letras (hasta 9999)
@@ -54,7 +54,7 @@ function obtenerFecha() {
   let dia = fecha.getDate();
   let mes = meses[fecha.getMonth()];
   let anio = fecha.getFullYear();
-  return dia + " de " + mes + " de " + anio;
+  return `${dia} de ${mes} de ${anio}`;
 }
 
 // Función para devolver la fecha en letras
@@ -69,7 +69,6 @@ function obtenerFechaEnLetras() {
   let anio = numeroALetras(fecha.getFullYear());
   return `${dia} de ${mes} de ${anio}`;
 }
-
 
 // Ejemplo de uso
 function mostrarFechaLetras (){

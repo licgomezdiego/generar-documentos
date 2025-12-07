@@ -12,17 +12,32 @@ function extraerIdDeUrl(url) {
 }
 
 function obtenerUrl(fila) {
-  if (typeof fila !== 'number' || fila < 1) return null; // Validación
-  
-  const hoja = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  const celda = hoja.getRange(`H${fila}`);
-  
-  return celda.isBlank() ? null : celda.getValue();
-}
+  // Validación de entrada
+  if (typeof fila !== 'number' || fila < 1) {
+    Logger.log("Error: fila debe ser un número mayor a 0");
+    return null;
+  }
 
-function obtenerIdDesdeFila(fila) {
-  const url = obtenerUrl(fila); // Usa la función corregida
-  return url ? extraerIdDeUrl(url) : null;
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const hojaModelos = spreadsheet.getSheetByName("Modelos");
+
+    if (!hojaModelos) {
+      throw new Error("No se encontró la hoja 'Modelos'");
+    }
+
+    const celda = hojaModelos.getRange(`B${fila}`);
+
+    if (celda.isBlank()) {
+      throw new Error(`Celda B${fila} vacía en hoja Modelos`);
+    }
+
+    return celda.getValue();
+
+  } catch (error) {
+    Logger.log("Error en obtenerUrl: " + error.message);
+    return null;
+  }
 }
 
 function test() {

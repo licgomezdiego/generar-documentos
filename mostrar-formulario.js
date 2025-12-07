@@ -1,6 +1,6 @@
 // 📋 Muestra el formulario en un cuadro de diálogo modal
 function mostrarFormulario() {
-  var html = HtmlService.createHtmlOutputFromFile("formularioDatos.html")
+  var html = HtmlService.createHtmlOutputFromFile("formulario-novedades.html")
     .setWidth(800)
     .setHeight(900);
   SpreadsheetApp.getUi().showModalDialog(html, "Altas y Bajas");
@@ -8,7 +8,7 @@ function mostrarFormulario() {
 
 // 🌐 Permite cargar el formulario desde una URL (opcional)
 function doGet(e) {
-  return HtmlService.createHtmlOutputFromFile('formularioDatos.html');
+  return HtmlService.createHtmlOutputFromFile('formulario-novedades.html');
 }
 
 // 🧾 Recibe los datos del formulario y los escribe en la hoja “Altas y Bajas”
