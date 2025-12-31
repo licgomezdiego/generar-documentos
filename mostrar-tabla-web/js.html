@@ -1,0 +1,295 @@
+<!-- se guardan como html para poder incluir el script en google apps script -->
+
+<script>
+let filas = [];
+let filasFiltradas = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  /* =========================
+     ELEMENTOS
+     ========================= */
+  const tabla = document.getElementById("tablaDatos");
+  filas = Array.from(tabla.querySelectorAll("tbody tr"));
+
+  const filtroNombre = document.getElementById("filtroNombre");
+  const filtroMunicipio = document.getElementById("filtroMunicipio");
+  const busquedaLibre = document.getElementById("busquedaLibre");
+  const paginacion = document.getElementById("paginacion");
+  const contadorResultados = document.getElementById("contadorResultados");
+
+  /* =========================
+     ESTADO
+     ========================= */
+  const filasPorPagina = 10;
+  let paginaActual = 1;
+  filasFiltradas = [];
+
+  /* =========================
+     INICIALIZACIÓN
+     ========================= */
+  cargarFiltros();
+  formatearColumnaFechas();
+  filasFiltradas = filas;
+  renderPagina();
+  renderPaginacion();
+  actualizarContador();
+
+  /* =========================
+     FILTROS
+     ========================= */
+  function cargarFiltros() {
+    const nombres = new Set();
+    const municipios = new Set();
+
+    filas.forEach(fila => {
+      const nombre = fila.cells[3]?.textContent.trim();
+      const municipio = fila.cells[5]?.textContent.trim();
+
+      if (nombre) nombres.add(nombre);
+      if (municipio) municipios.add(municipio);
+    });
+
+    llenarSelect(filtroNombre, nombres);
+    llenarSelect(filtroMunicipio, municipios);
+  }
+
+  function llenarSelect(select, valores) {
+    select.innerHTML = '<option value="">Todos</option>';
+    Array.from(valores).sort().forEach(valor => {
+      const opt = document.createElement("option");
+      opt.value = valor;
+      opt.textContent = valor;
+      select.appendChild(opt);
+    });
+  }
+
+  /* =========================
+     CONTADOR
+     ========================= */
+  function actualizarContador() {
+    contadorResultados.textContent =
+      `Resultados encontrados: ${filasFiltradas.length}`;
+  }
+
+  /* =========================
+     FECHAS
+     ========================= */
+  function formatearFecha(valor) {
+    if (!valor) return "";
+
+    const fecha = new Date(valor);
+    if (isNaN(fecha)) return valor;
+
+    const dd = String(fecha.getDate()).padStart(2, "0");
+    const mm = String(fecha.getMonth() + 1).padStart(2, "0");
+    const yyyy = fecha.getFullYear();
+    const hh = String(fecha.getHours()).padStart(2, "0");
+    const min = String(fecha.getMinutes()).padStart(2, "0");
+
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}h`;
+  }
+
+  function formatearColumnaFechas() {
+    filas.forEach(fila => {
+      const celda = fila.cells[0];
+      if (celda) {
+        celda.textContent = formatearFecha(celda.textContent.trim());
+      }
+    });
+  }
+
+  /* =========================
+     RESALTADO
+     ========================= */
+  function limpiarResaltado(fila) {
+    Array.from(fila.cells).forEach(celda => {
+      celda.innerHTML = celda.textContent;
+    });
+  }
+
+  function resaltarTexto(fila, texto) {
+    if (!texto) return;
+
+    const regex = new RegExp(`(${texto})`, "gi");
+    Array.from(fila.cells).forEach(celda => {
+      celda.innerHTML = celda.textContent.replace(regex, "<mark>$1</mark>");
+    });
+  }
+
+  /* =========================
+     FILTRADO + BÚSQUEDA
+     ========================= */
+  function aplicarFiltros() {
+    const nombre = filtroNombre.value.trim().toLowerCase();
+    const municipio = filtroMunicipio.value.trim().toLowerCase();
+    const texto = busquedaLibre.value.trim().toLowerCase();
+
+    filasFiltradas = filas.filter(fila => {
+      const cNombre = fila.cells[3].textContent.trim().toLowerCase();
+      const cMunicipio = fila.cells[5].textContent.trim().toLowerCase();
+      const contenido = fila.textContent.toLowerCase();
+
+      return (
+        (!nombre || cNombre === nombre) &&
+        (!municipio || cMunicipio.includes(municipio)) &&
+        (!texto || contenido.includes(texto))
+      );
+    });
+
+    paginaActual = 1;
+    renderPagina();
+    renderPaginacion();
+    actualizarContador();
+  }
+
+  /* =========================
+     PAGINACIÓN
+     ========================= */
+  function renderPagina() {
+    filas.forEach(fila => {
+      fila.style.display = "none";
+      limpiarResaltado(fila);
+    });
+
+    const inicio = (paginaActual - 1) * filasPorPagina;
+    const fin = inicio + filasPorPagina;
+
+    filasFiltradas.slice(inicio, fin).forEach(fila => {
+      fila.style.display = "";
+      if (busquedaLibre.value.trim()) {
+        resaltarTexto(fila, busquedaLibre.value.trim());
+      }
+    });
+  }
+
+  function renderPaginacion() {
+    paginacion.innerHTML = "";
+    const totalPaginas = Math.ceil(filasFiltradas.length / filasPorPagina);
+
+    for (let i = 1; i <= totalPaginas; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      if (i === paginaActual) btn.classList.add("activo");
+
+      btn.onclick = () => {
+        paginaActual = i;
+        renderPagina();
+        renderPaginacion();
+      };
+
+      paginacion.appendChild(btn);
+    }
+  }
+
+  /* =========================
+     EVENTOS
+     ========================= */
+  filtroNombre.addEventListener("change", aplicarFiltros);
+  filtroMunicipio.addEventListener("change", aplicarFiltros);
+  busquedaLibre.addEventListener("input", aplicarFiltros);
+
+});
+function exportarCSV() {
+  const filasExportar = filasFiltradas.length ? filasFiltradas : filas;
+
+  const csv = [];
+
+  // Encabezados
+  const headers = Array.from(
+    document.querySelectorAll("#tablaDatos thead th")
+  ).map(th => `"${th.textContent.trim()}"`);
+
+  csv.push(headers.join(","));
+
+  // Filas
+  filasExportar.forEach(fila => {
+    const filaCSV = Array.from(fila.cells)
+      .map(celda =>
+        `"${celda.textContent.replace(/"/g, '""').trim()}"`
+      )
+      .join(",");
+
+    csv.push(filaCSV);
+  });
+
+  const blob = new Blob([csv.join("\n")], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "comunicaciones_filtradas.csv";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function exportarPDF() {
+  const filasExportar = filasFiltradas.length ? filasFiltradas : filas;
+  const { jsPDF } = window.jspdf;
+
+  const doc = new jsPDF("landscape", "pt", "a4");
+
+  const headers = [
+    Array.from(document.querySelectorAll("#tablaDatos thead th"))
+      .map(th => th.textContent.trim())
+  ];
+
+  const data = filasExportar.map(fila =>
+    Array.from(fila.cells).map(celda => celda.textContent.trim())
+  );
+
+  // Título
+  doc.setFontSize(14);
+  doc.setTextColor(44, 62, 80);
+  doc.text("Consulta de Comunicaciones", 40, 30);
+
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text(
+    "Exportado el " + new Date().toLocaleString(),
+    40,
+    45
+  );
+
+  doc.autoTable({
+    startY: 60,
+    head: headers,
+    body: data,
+    theme: "grid",
+
+    styles: {
+      fontSize: 8,
+      cellPadding: 4,
+      lineColor: [200, 200, 200],
+      lineWidth: 0.5
+    },
+
+    headStyles: {
+      fillColor: [41, 128, 185], // azul institucional
+      textColor: 255,
+      fontStyle: "bold",
+      halign: "center"
+    },
+
+    alternateRowStyles: {
+      fillColor: [245, 247, 250]
+    },
+
+    columnStyles: {
+      0: { halign: "center", cellWidth: 90 },
+      3: { cellWidth: 130 },
+      5: { halign: "center" }
+    },
+
+    margin: { left: 40, right: 40 }
+  });
+
+  doc.save("comunicaciones_filtradas.pdf");
+}
+
+
+</script>

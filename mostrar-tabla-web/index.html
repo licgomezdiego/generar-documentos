@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('css'); ?>
+</head>
+
+<body>
+
+  <h2>Consulta de Comunicaciones</h2>
+
+  <div class="acciones">
+    <button onclick="exportarCSV()">Exportar CSV</button>
+    <button onclick="exportarPDF()">Exportar PDF</button>
+  </div>
+
+  <div class="filtros">
+    <label>
+      Buscar:
+      <input type="text" id="busquedaLibre">
+    </label>
+
+    <label>
+      Nombre:
+      <select id="filtroNombre"></select>
+    </label>
+
+    <label>
+      Municipio:
+      <select id="filtroMunicipio"></select>
+    </label>
+  </div>
+
+  <div id="contadorResultados"></div>
+
+  <div class="tabla-responsive">
+    <table id="tablaDatos">
+      <thead>
+        <tr>
+          <? for (let j = 0; j < datos[0].length; j++) { ?>
+            <th><?= datos[0][j] ?></th>
+          <? } ?>
+        </tr>
+      </thead>
+      <tbody>
+        <? for (let i = 1; i < datos.length; i++) { ?>
+          <tr>
+            <? for (let j = 0; j < datos[i].length; j++) { ?>
+              <td><?= datos[i][j] ?></td>
+            <? } ?>
+          </tr>
+        <? } ?>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="paginacion"></div>
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- autoTable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+  <?!= include('js'); ?>
+
+
+</body>
+</html>
