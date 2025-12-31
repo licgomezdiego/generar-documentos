@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Formulario de Novedades</title>
+  <base target="_top">
+  <style>
+    /* ======== ESTILO GLOBAL ======== */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f5f5f7;
+      color: #1d1d1f;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      font-weight: 600;
+      margin-top: 30px;
+      color: #1d1d1f;
+      letter-spacing: -0.5px;
+    }
+
+    /* ======== CONTENEDOR DEL FORMULARIO ======== */
+    .formulario {
+      background-color: #ffffff;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .formulario:hover {
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ======== CAMPOS ======== */
+    .campo {
+      display: flex;
+      flex-direction: column;
+      width: 48%;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      color: #555;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    select,
+    textarea {
+      padding: 10px 14px;
+      border: 1px solid #d2d2d7;
+      border-radius: 10px;
+      background-color: #fbfbfd;
+      font-size: 0.95rem;
+      color: #1d1d1f;
+      transition: all 0.2s ease-in-out;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #0071e3;
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+      background-color: #ffffff;
+    }
+
+    select {
+      appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="gray" height="16" viewBox="0 0 20 20" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M5.516 7.548l4.484 4.484 4.484-4.484L16 8.548l-6 6-6-6z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+    }
+
+    /* ======== BOTÓN ======== */
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #0071e3;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    button:hover {
+      background-color: #0077ed;
+      box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);
+    }
+
+    button:active {
+      background-color: #006edc;
+      transform: scale(0.99);
+    }
+
+    /* ======== RESPONSIVO ======== */
+    @media (max-width: 700px) {
+      .formulario {
+        padding: 25px;
+      }
+      .campo {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Ingresar Novedad</h1>
+
+  <form class="formulario" id="formularioDatos">
+    <div class="campo">
+      <label for="fecha">Fecha</label>
+      <input type="date" id="fecha" name="fecha" required>
+    </div>
+
+    <div class="campo">
+      <label for="novedad">Novedad</label>
+      <select id="novedad" name="novedad" required>
+        <option value="Alta">Alta</option>
+        <option value="Baja">Baja</option>
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="area">Área de trabajo</label>
+      <input type="text" id="area" name="area" required>
+    </div>
+
+    <div class="campo">
+      <label for="nombre">Nombre</label>
+      <input type="text" id="nombre" name="nombre" required>
+    </div>
+
+    <div class="campo">
+      <label for="motivo">Motivo</label>
+      <input type="text" id="motivo" name="motivo" required>
+    </div>
+
+    <div class="campo">
+      <label for="tipoContrato">Tipo de contrato</label>
+      <select id="tipoContrato" name="tipoContrato" required>
+        <option value="Asistente educativo multiarea">Asistente educativo multiarea</option>
+        <option value="Asistente educativo">Asistente educativo</option>
+        <option value="Doble Núcleo">Doble Núcleo</option>
+        <option value="Asistente educativo 50%">Asistente educativo 50%</option>
+        <option value="Asistente educativo Itinerante">Asistente educativo Itinerante</option>
+        <option value="Asistente educativo Primaria">Asistente educativo Primaria</option>
+        <option value="Coordinador Zonal">Coordinador Zonal</option>
+        <option value="Coordinador Pedagógico">Coordinador Pedagógico</option>
+        <option value="Evaluador Simple">Evaluador Simple</option>
+        <option value="Evaluador Doble Módulo">Evaluador Doble Módulo</option>
+        <option value="Tutor Telemático">Tutor Telemático</option>
+        <option value="Tutor Telemático Doble">Tutor Telemático Doble</option>
+        <option value="Corrector de Estilos">Corrector de Estilos</option>
+        <option value="Docente Equipo Técnico Ped. Sec.">Docente Equipo Técnico Ped. Sec.</option>
+        <option value="Doble Módulo">Doble Módulo</option>
+        <option value="Docente Equipo Técnico Ped. Sec. SIMPLE">Docente Equipo Técnico Ped. Sec. SIMPLE</option>
+        <option value="Docente Equipo Técnico Ped. Primaria SIMPLE">Docente Equipo Técnico Ped. Primaria SIMPLE</option>
+        <option value="Administrativo">Administrativo</option>
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="reemplazo">Reemplazo</label>
+      <input type="text" id="reemplazo" name="reemplazo">
+    </div>
+
+    <div class="campo">
+      <label for="dependencia">Dependencia</label>
+      <select id="dependencia" name="dependencia" required>
+        <option value="Sede Posadas">Sede Posadas</option>
+        <option value="Sede Oberá">Sede Oberá</option>
+        <option value="Sede Eldorado">Sede Eldorado</option>
+        <option value="Luisa Eugenia López">Luisa Eugenia López</option>
+        <option value="Silvina Alejandra Abdala">Silvina Alejandra Abdala</option>
+        <option value="Juan Carlos Drewanz">Juan Carlos Drewanz</option>
+        <option value="Jesica Marisel Krioka">Jesica Marisel Krioka</option>
+        <option value="Mónica Elena Kit">Mónica Elena Kit</option>
+        <option value="Arzamendia María del Rosario">Arzamendia María del Rosario</option>
+        <option value="Dávalos Silvia">Dávalos Silvia</option>
+        <option value="Darío Alberto Fonceca">Darío Alberto Fonceca</option>
+        <option value="Guerrero Silvia Liliana">Guerrero Silvia Liliana</option>
+        <option value="Almirón Jimena Maricruz">Almirón Jimena Maricruz</option>
+        <option value="Buenos Aires">Buenos Aires</option>
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="inicioVigencia">Inicio Vigencia</label>
+      <input type="date" id="inicioVigencia" name="inicioVigencia">
+    </div>
+
+    <div class="campo">
+      <label for="finVigencia">Fin Vigencia</label>
+      <input type="date" id="finVigencia" name="finVigencia">
+    </div>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <script>
+    document.getElementById('formularioDatos').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      var fecha = document.getElementById('fecha').value;
+      var novedad = document.getElementById('novedad').value;
+      var area = document.getElementById('area').value;
+      var nombre = document.getElementById('nombre').value;
+      var motivo = document.getElementById('motivo').value;
+      var tipoContrato = document.getElementById('tipoContrato').value;
+      var reemplazo = document.getElementById('reemplazo').value;
+      var dependencia = document.getElementById('dependencia').value;
+      var inicioVigencia = document.getElementById('inicioVigencia').value;
+      var finVigencia = document.getElementById('finVigencia').value;
+
+      google.script.run.withSuccessHandler(function() {
+        document.getElementById('formularioDatos').reset();
+        alert('✅ Datos cargados correctamente.');
+      }).withFailureHandler(function(error) {
+        alert('❌ Error: ' + error.message);
+      }).enviarDatosAHoja(
+        fecha, novedad, area, nombre, motivo, tipoContrato,
+        reemplazo, dependencia, inicioVigencia, finVigencia
+      );
+    });
+  </script>
+</body>
+</html>

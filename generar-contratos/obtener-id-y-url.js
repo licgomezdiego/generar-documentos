@@ -11,6 +11,7 @@ function extraerIdDeUrl(url) {
   return match ? match[1] : null;
 }
 
+<<<<<<< HEAD:obtener-id-y-url.js
 function obtenerUrl(columna,fila) {
   if (typeof fila !== 'number' || fila < 1) return null; // Validación
 
@@ -23,6 +24,35 @@ function obtenerUrl(columna,fila) {
 function obtenerIdDesdeCelda(columna, fila) {
   const url = obtenerUrl(columna, fila); // Usa la función corregida
   return url ? extraerIdDeUrl(url) : null;
+=======
+function obtenerUrl(fila) {
+  // Validación de entrada
+  if (typeof fila !== 'number' || fila < 1) {
+    Logger.log("Error: fila debe ser un número mayor a 0");
+    return null;
+  }
+
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const hojaModelos = spreadsheet.getSheetByName("Modelos");
+
+    if (!hojaModelos) {
+      throw new Error("No se encontró la hoja 'Modelos'");
+    }
+
+    const celda = hojaModelos.getRange(`B${fila}`);
+
+    if (celda.isBlank()) {
+      throw new Error(`Celda B${fila} vacía en hoja Modelos`);
+    }
+
+    return celda.getValue();
+
+  } catch (error) {
+    Logger.log("Error en obtenerUrl: " + error.message);
+    return null;
+  }
+>>>>>>> actualizacion-general-de-codigo:generar-contratos/obtener-id-y-url.js
 }
 
 function test() {

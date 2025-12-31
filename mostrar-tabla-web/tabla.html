@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #e6e9ef;
+      z-index: 2;
+      border-bottom: 2px solid #999;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #f9f9f9;
+    }
+
+    select,
+    input {
+      padding: 4px;
+      margin-right: 10px;
+    }
+
+    #paginacion button {
+      margin: 2px;
+      padding: 4px 8px;
+    }
+
+    #paginacion button.activo {
+      font-weight: bold;
+      background: #d0d6e5;
+    }
+    #tablaDatos thead th {
+  position: sticky;
+  top: 0;
+  background-color: #f2f2f2;
+  z-index: 2;
+}
+
+  </style>
+
+</head>
+
+<body>
+  <h2>Prueba de tabla (datos inyectados)</h2>
+  <div style="margin-bottom:10px;">
+    <label style="margin-left:20px;">
+  Buscar:
+  <input type="text" id="busquedaLibre" placeholder="Buscar en toda la tabla">
+</label>
+    <label>
+    Nombre:
+    <select id="filtroNombre">
+      <option value="">Todos</option>
+    </select>
+  </label>
+
+    <label style="margin-left:20px;">
+    Municipio:
+    <select id="filtroMunicipio">
+      <option value="">Todos</option>
+    </select>
+  </label>
+  </div>
+  <div id="contadorResultados" style="margin:10px 0; font-weight:bold;"></div>
+
+<table id="tablaDatos">
+  <thead>
+    <tr>
+      <? for (let j = 0; j < datos[0].length; j++) { ?>
+        <th><?= datos[0][j] ?></th>
+      <? } ?>
+    </tr>
+  </thead>
+
+  <tbody>
+    <? for (let i = 1; i < datos.length; i++) { ?>
+      <tr>
+        <? for (let j = 0; j < datos[i].length; j++) { ?>
+          <td><?= datos[i][j] ?></td>
+        <? } ?>
+      </tr>
+    <? } ?>
+  </tbody>
+</table>
+
+  <div id="paginacion" style="margin-top:10px;"></div>
+
+  <script>
+    const tabla = document.getElementById("tablaDatos");
+  const filas = Array.from(tabla.querySelectorAll("tbody tr"));
+
+
+  const filtroNombre = document.getElementById("filtroNombre");
+  const filtroMunicipio = document.getElementById("filtroMunicipio");
+  const busquedaLibre = document.getElementById("busquedaLibre");
+  const paginacion = document.getElementById("paginacion");
+
+  const filasPorPagina = 10;
+  let paginaActual = 1;
+  let filasFiltradas = [];
+
+  /* =========================
+     CARGA DE FILTROS
+     ========================= */
+  function cargarFiltros() {
+    const nombres = new Set();
+    const municipios = new Set();
+
+    filas.forEach(fila => {
+      const nombre = fila.cells[3]?.textContent.trim();
+      const municipio = fila.cells[5]?.textContent.trim();
+
+      if (nombre) nombres.add(nombre);
+      if (municipio) municipios.add(municipio);
+    });
+
+    llenarSelect(filtroNombre, nombres);
+    llenarSelect(filtroMunicipio, municipios);
+  }
+
+  function llenarSelect(select, valores) {
+    select.innerHTML = '<option value="">Todos</option>';
+    Array.from(valores).sort().forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      select.appendChild(opt);
+    });
+  }
+  function actualizarContador() {
+  const total = filasFiltradas.length;
+  document.getElementById("contadorResultados").textContent =
+    `Resultados encontrados: ${total}`;
+}
+function formatearFecha(valor) {
+  if (!valor) return "";
+
+  const fecha = new Date(valor);
+  if (isNaN(fecha)) return valor;
+
+  const dd = String(fecha.getDate()).padStart(2, "0");
+  const mm = String(fecha.getMonth() + 1).padStart(2, "0");
+  const yyyy = fecha.getFullYear();
+  const hh = String(fecha.getHours()).padStart(2, "0");
+  const min = String(fecha.getMinutes()).padStart(2, "0");
+
+  return `${dd}/${mm}/${yyyy}     ${hh}:${min}h`;
+}
+
+function formatearColumnaFechas() {
+  filas.forEach(fila => {
+    const celdaFecha = fila.cells[0];
+    if (!celdaFecha) return;
+
+    const valorOriginal = celdaFecha.textContent.trim();
+    const valorFormateado = formatearFecha(valorOriginal);
+
+    celdaFecha.textContent = valorFormateado;
+  });
+}
+
+
+  /* =========================
+     FILTRADO + BUSQUEDA
+     ========================= */
+  function aplicarFiltros() {
+  const nombre = filtroNombre.value.trim().toLowerCase();
+  const municipio = filtroMunicipio.value.trim().toLowerCase();
+  const texto = busquedaLibre.value.trim().toLowerCase();
+
+  filasFiltradas = filas.filter(fila => {
+    const cNombre = fila.cells[3].textContent.trim().toLowerCase();
+    const cMunicipio = fila.cells[5].textContent.trim().toLowerCase();
+    const filaCompleta = fila.textContent.toLowerCase();
+
+    return (
+      (!nombre || cNombre === nombre) &&
+      (!municipio || cMunicipio.includes(municipio)) &&
+      (!texto || filaCompleta.includes(texto))
+    );
+  });
+
+  paginaActual = 1;
+  renderPagina();
+  renderPaginacion();
+  actualizarContador();
+}
+
+
+  /* =========================
+     PAGINACIÓN
+     ========================= */
+  function renderPagina() {
+    filas.forEach(f => f.style.display = "none");
+
+    const inicio = (paginaActual - 1) * filasPorPagina;
+    const fin = inicio + filasPorPagina;
+
+    filasFiltradas.slice(inicio, fin).forEach(f => {
+      f.style.display = "";
+    });
+  }
+
+  function renderPaginacion() {
+    paginacion.innerHTML = "";
+    const totalPaginas = Math.ceil(filasFiltradas.length / filasPorPagina);
+
+    for (let i = 1; i <= totalPaginas; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      if (i === paginaActual) btn.classList.add("activo");
+
+      btn.onclick = () => {
+        paginaActual = i;
+        renderPagina();
+        renderPaginacion();
+      };
+
+      paginacion.appendChild(btn);
+    }
+  }
+
+  /* =========================
+     EVENTOS
+     ========================= */
+  filtroNombre.addEventListener("change", aplicarFiltros);
+  filtroMunicipio.addEventListener("change", aplicarFiltros);
+  busquedaLibre.addEventListener("input", aplicarFiltros);
+
+  /* =========================
+     INICIALIZACIÓN
+     ========================= */
+ /* =========================
+   INICIALIZACIÓN
+   ========================= */
+cargarFiltros();
+formatearColumnaFechas();
+filasFiltradas = filas;
+renderPagina();
+renderPaginacion();
+actualizarContador();
+
+  </script>
+
+
+</body>
+
+</html>
