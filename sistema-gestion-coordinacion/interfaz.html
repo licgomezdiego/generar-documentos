@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <?!= include('CSS'); ?>
+  </head>
+  <body class="bg-gray-50">
+
+    <div id="pantalla-bloqueo" class="fixed inset-0 bg-white flex items-center justify-center z-[100]">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+        <h2 id="mensaje-bloqueo" class="mt-4 text-xl font-bold">Verificando Identidad...</h2>
+        <p id="email-usuario" class="text-sm text-gray-500 mt-2 italic"></p>
+      </div>
+    </div>
+
+    <div id="app-container" class="hidden min-h-screen">
+      <nav class="bg-blue-800 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+          <h1 class="font-bold text-lg">Sistema de Gestión</h1>
+          <span id="user-display" class="text-sm opacity-80"></span>
+        </div>
+      </nav>
+      <main class="container mx-auto p-6">
+          <div class="bg-white p-6 rounded shadow">
+             <h2 class="text-2xl font-bold mb-4">¡Acceso Correcto!</h2>
+             <p>Estamos listos para el CRUD de Núcleos.</p>
+          </div>
+      </main>
+    </div>
+
+    <?!= include('JS_Login'); ?>
+    <button onclick="abrirGestorUsuarios()" class="text-xs underline opacity-70 hover:opacity-100">
+  Configurar Accesos
+</button>
+
+<div id="modal-usuarios" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[200] flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-4xl h-[80vh] rounded-lg overflow-hidden flex flex-col">
+    <div class="p-4 bg-gray-100 flex justify-between">
+      <h3 class="font-bold">Administración de Usuarios</h3>
+      <button onclick="cerrarGestorUsuarios()" class="text-red-500 font-bold">CERRAR [X]</button>
+    </div>
+    <iframe src="https://script.google.com/macros/s/AKfycbx3BeMSopZjD64Mi2aDCQjvOoJgJHZ6T3knNann5wWXR2N6krIowQ2-JeedksxSOwU/exec" class="w-full flex-grow border-none"></iframe>
+  </div>
+</div>
+  </body>
+</html>

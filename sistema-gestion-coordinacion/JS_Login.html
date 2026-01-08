@@ -1,0 +1,55 @@
+<script>
+  /**
+   * JS_Login: Validación mediante petición activa al servidor
+   */
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log("Iniciando validación activa...");
+    verificarCredenciales();
+  });
+
+  function verificarCredenciales() {
+    // Llamamos a la función del servidor Code.gs
+    google.script.run
+      .withSuccessHandler(function(acceso) {
+        console.log("Respuesta del servidor:", acceso);
+        procesarRespuesta(acceso);
+      })
+      .withFailureHandler(function(error) {
+        console.error("Error en la comunicación:", error);
+        detenerConError("Error de servidor");
+      })
+      .validarAccesoUsuario(); // <--- Esta es la función en tu Code.gs
+  }
+
+  function procesarRespuesta(acceso) {
+    const pantalla = document.getElementById('pantalla-bloqueo');
+    const app = document.getElementById('app-container');
+    const userDisplay = document.getElementById('user-display');
+
+    if (acceso && acceso.hasAccess) {
+      console.log("Acceso concedido");
+      userDisplay.innerText = acceso.nombre + " (" + acceso.rol + ")";
+      pantalla.style.display = 'none';
+      app.classList.remove('hidden');
+    } else {
+      detenerConError(acceso ? acceso.email : "Usuario no autorizado");
+    }
+  }
+
+  function detenerConError(email) {
+    const spinner = document.getElementById('spinner');
+    if(spinner) spinner.style.display = 'none';
+    const mensaje = document.getElementById('mensaje-bloqueo');
+    mensaje.innerText = "ACCESO RESTRINGIDO";
+    mensaje.style.color = "red";
+    document.getElementById('email-usuario').innerText = "Correo: " + email;
+  }
+  
+  function abrirGestorUsuarios() {
+  document.getElementById('modal-usuarios').classList.remove('hidden');
+}
+function cerrarGestorUsuarios() {
+  document.getElementById('modal-usuarios').classList.add('hidden');
+}
+</script>
