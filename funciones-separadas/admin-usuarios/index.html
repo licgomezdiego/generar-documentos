@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Mantenemos solo la animación de la tilde que no está en Tailwind */
+    .success-check {
+      color: #0ea5e9;
+      /* Celeste tailwind sky-500 */
+      font-weight: bold;
+      margin-left: 8px;
+      animation: fadeOut 2s forwards;
+    }
+
+    @keyframes fadeOut {
+      0% {
+        opacity: 1;
+        transform: scale(1.3);
+      }
+
+      100% {
+        opacity: 0;
+        transform: scale(1);
+      }
+    }
+
+    #admin-panel {
+      display: none;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 p-4 md:p-8 font-sans">
+
+  <div id="loading" class="text-center mt-20 text-slate-500 animate-pulse">
+    Verificando nivel de acceso...
+  </div>
+
+  <div id="error-box"
+    class="hidden max-w-md mx-auto mt-20 bg-red-50 border border-red-200 text-red-800 p-6 rounded-lg text-center shadow-lg">
+    <h2 class="text-2xl mb-2">🚫 Acceso Denegado</h2>
+    <p id="error-msg" class="text-sm opacity-80"></p>
+  </div>
+
+  <div id="admin-panel" class="max-w-6xl mx-auto">
+
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">Gestión de Usuarios</h2>
+        <p class="text-slate-500 text-sm">Hola,
+          <span id="nombre-admin" class="font-semibold text-sky-600 italic">...</span>
+        </p>
+      </div>
+
+      <div class="relative w-full md:w-80">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+        🔍
+      </span>
+        <input type="text" id="buscador" onkeyup="filtrarUsuarios()"
+        placeholder="Buscar por nombre o correo..."
+        class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none shadow-sm transition">
+      </div>
+    </div>
+
+
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+      <h3 id="titulo-registro"
+        class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center">
+        ➕ Registrar Nuevo Miembro
+      </h3>
+      <div class="flex flex-col md:flex-row gap-3">
+        <input type="text" id="nuevoMail" placeholder="Correo Gmail"
+  class="flex-grow p-2 border rounded-lg focus:ring-2 focus:ring-sky-400 outline-none transition-all duration-300">
+
+        <select id="nuevoRol" class="p-2 border rounded-lg bg-white focus:ring-2 focus:ring-sky-400 outline-none cursor-pointer">
+            <option value="Administrador">Administrador</option>
+            <option value="Atencion al estudiante">Atención al estudiante</option>
+            <option value="Coordinacion de correo">Coordinación de correo</option>
+            <option value="Coordinacion de nucleos">Coordinación de núcleos</option>
+            <option value="Coordinacion de promocion">Coordinación de promoción</option>
+            <option value="Coordinacion general">Coordinación general</option>
+            <option value="Direccion general">Dirección general</option>
+            <option value="Gestion pedagogica">Gestión pedagógica</option>
+            <option value="Invitado">Invitado</option>
+            <option value="Juridico y despacho">Jurídico y despacho</option>
+            <option value="Mesa de entrada">Mesa de entrada</option>
+            <option value="Responsable de Sede">Responsable de Sede</option>
+            <option value="Titulos y constancias">Títulos y constancias</option>
+        </select>
+
+        <input type="text" id="nuevoNombre" placeholder="Nombre completo"
+  class="flex-grow p-2 border rounded-lg focus:ring-2 focus:ring-sky-400 outline-none transition-all duration-300">
+
+        <button onclick="nuevoRegistro()" class="bg-sky-600 hover:bg-sky-700 text-white px-6 py-2 rounded-lg font-bold transition shadow-sm active:transform active:scale-95">
+          Crear
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-slate-800 text-white text-sm">
+            <tr>
+              <th class="p-4 font-medium">Email (Gmail)</th>
+              <th class="p-4 font-medium">Rol</th>
+              <th class="p-4 font-medium">Nombre</th>
+              <th class="p-4 font-medium">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoTabla" class="text-slate-700 divide-y divide-slate-100">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let todosLosUsuarios = [];
+
+  // Al cargar la página, pedimos la validación al servidor
+  window.onload = function() {
+  google.script.run
+    .withSuccessHandler(function(acceso) {
+      document.getElementById('loading').style.display = 'none';
+      if (acceso.success) {
+        document.getElementById('admin-panel').style.display = 'block';
+        // MOSTRAR NOMBRE DEL ADMIN
+        document.getElementById('nombre-admin').innerText = acceso.nombre || acceso.email;
+        cargarDatos();
+      } else {
+        // ... lógica de error ...
+      }
+    })
+    .verificarAdmin();
+};
+
+  function cargarDatos() {
+    google.script.run.withSuccessHandler(data => {
+      todosLosUsuarios = data;
+      renderizar(data);
+    }).obtenerUsuarios();
+  }
+
+function renderizar(lista) {
+    const cuerpo = document.getElementById('cuerpoTabla');
+    cuerpo.innerHTML = '';
+    lista.forEach(user => {
+      const tr = document.createElement('tr');
+      tr.className = "hover:bg-slate-50 transition";
+      tr.innerHTML = `
+        <td class="p-3"><input type="text" id="mail-${user.filaOriginal}" value="${user.mail}" class="w-full p-1 border-transparent hover:border-slate-200 border rounded focus:bg-white transition"></td>
+        <td class="p-3">
+          <select id="rol-${user.filaOriginal}" class="w-full p-1 bg-transparent border-transparent hover:border-slate-200 border rounded cursor-pointer">
+            <option value="Administrador" ${user.rol == 'Administrador' ? 'selected' : ''}>Administrador</option>
+            <option value="Atencion al estudiante" ${user.rol == 'Atencion al estudiante' ? 'selected' : ''}>Atención al estudiante</option>
+            <option value="Coordinacion de correo" ${user.rol == 'Coordinacion de correo' ? 'selected' : ''}>Coordinación de correo</option>
+            <option value="Coordinacion de nucleos" ${user.rol == 'Coordinacion de nucleos' ? 'selected' : ''}>Coordinación de núcleos</option>
+            <option value="Coordinacion de promocion" ${user.rol == 'Coordinacion de promocion' ? 'selected' : ''}>Coordinación de promoción</option>
+            <option value="Coordinacion general" ${user.rol == 'Coordinacion general' ? 'selected' : ''}>Coordinación general</option>
+            <option value="Direccion general" ${user.rol == 'Direccion general' ? 'selected' : ''}>Dirección general</option>
+            <option value="Gestion pedagogica" ${user.rol == 'Gestion pedagogica' ? 'selected' : ''}>Gestión pedagógica</option>
+            <option value="Invitado" ${user.rol == 'Invitado' ? 'selected' : ''}>Invitado</option>
+            <option value="Juridico y despacho" ${user.rol == 'Juridico y despacho' ? 'selected' : ''}>Jurídico y despacho</option>
+            <option value="Mesa de entrada" ${user.rol == 'Mesa de entrada' ? 'selected' : ''}>Mesa de entrada</option>
+            <option value="Responsable de Sede" ${user.rol == 'Responsable de Sede' ? 'selected' : ''}>Responsable de Sede</option>
+            <option value="Titulos y constancias" ${user.rol == 'Titulos y constancias' ? 'selected' : ''}>Títulos y constancias</option>
+          </select>
+        </td>
+        <td class="p-3"><input type="text" id="nom-${user.filaOriginal}" value="${user.nombre}" class="w-full p-1 border-transparent hover:border-slate-200 border rounded focus:bg-white transition"></td>
+        
+        <td class="p-3 whitespace-nowrap">
+         
+          <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded text-sm transition" onclick="guardar(${user.filaOriginal})">Guardar</button>
+          
+          <button id="btn-borrar-${user.filaOriginal}" 
+        class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded text-sm transition-all ml-1" 
+        onclick="confirmarBorrado(${user.filaOriginal})">Borrar</button>
+        </td>
+      `;
+      cuerpo.appendChild(tr);
+    });
+  }
+
+  /**
+ * Inserta una tilde celeste temporal en la fila correspondiente
+ */
+function mostrarConfirmacion(filaId) {
+  // Buscamos la celda de acciones de esa fila
+  const celdaAcciones = document.querySelector(`button[onclick*="guardar(${filaId})"]`).parentElement;
+  
+  // Si ya hay una tilde, la quitamos para no duplicar
+  const viejaTilde = celdaAcciones.querySelector('.success-check');
+  if (viejaTilde) viejaTilde.remove();
+
+  const tilde = document.createElement('span');
+  tilde.innerHTML = ' ✓';
+  tilde.className = 'success-check';
+  celdaAcciones.appendChild(tilde);
+}
+
+function guardar(fila) {
+  const m = document.getElementById(`mail-${fila}`).value;
+  const r = document.getElementById(`rol-${fila}`).value;
+  const n = document.getElementById(`nom-${fila}`).value;
+  
+  // Deshabilitar botón temporalmente para evitar doble clic
+  const btn = event.currentTarget;
+  btn.disabled = true;
+
+  google.script.run
+    .withSuccessHandler(() => {
+      btn.disabled = false;
+      mostrarConfirmacion(fila); // <--- Feedback visual en lugar de alert
+    })
+    .actualizarUsuario(fila, m, r, n);
+}
+
+function nuevoRegistro() {
+  const inputMail = document.getElementById('nuevoMail');
+  const inputNombre = document.getElementById('nuevoNombre');
+  const r = document.getElementById('nuevoRol').value;
+  
+  const m = inputMail.value.trim();
+  const n = inputNombre.value.trim();
+  
+  if (!m || !n) {
+    if (!m) aplicarEstiloError(inputMail, "¡Falta el Mail!");
+    if (!n) aplicarEstiloError(inputNombre, "¡Falta el Nombre!");
+    return;
+  }
+  
+  google.script.run
+    .withSuccessHandler(data => {
+      renderizar(data); // Actualiza la tabla
+      inputMail.value = '';
+      inputNombre.value = '';
+      
+      // MOSTRAR TILDE DE ÉXITO EN EL TÍTULO
+      mostrarConfirmacionRegistro(); 
+    })
+    .crearUsuario(m, r, n);
+}
+
+/**
+ * Muestra la tilde celeste al lado de "Registrar Nuevo Miembro"
+ */
+function mostrarConfirmacionRegistro() {
+  const contenedorTitulo = document.getElementById('titulo-registro');
+  
+  // Limpiamos si hay una tilde previa
+  const viejaTilde = contenedorTitulo.querySelector('.success-check');
+  if (viejaTilde) viejaTilde.remove();
+
+  const tilde = document.createElement('span');
+  tilde.innerHTML = ' ✓ Guardado';
+  tilde.className = 'success-check text-sm ml-2 inline-block'; // Reutilizamos tu clase CSS
+  contenedorTitulo.appendChild(tilde);
+}
+
+/**
+ * Aplica estilos de error temporales al input
+ */
+function aplicarEstiloError(elemento, mensajeOriginal) {
+  const placeholderOriginal = elemento.placeholder;
+  
+  // Aplicar clases de error (Rojo)
+  elemento.classList.add('border-red-500', 'placeholder-red-400', 'ring-1', 'ring-red-500');
+  elemento.placeholder = mensajeOriginal;
+  elemento.value = ""; // Limpiamos por si hay espacios
+  
+  // Quitar el error después de 3 segundos
+  setTimeout(() => {
+    elemento.classList.remove('border-red-500', 'placeholder-red-400', 'ring-1', 'ring-red-500');
+    elemento.placeholder = placeholderOriginal;
+  }, 3000);
+}
+
+/**
+ * Paso 1: Transforma el botón para pedir confirmación visual
+ */
+function confirmarBorrado(fila) {
+  const btn = document.getElementById(`btn-borrar-${fila}`);
+  
+  // Guardamos el texto original por si el usuario no hace clic y queremos resetear
+  const textoOriginal = btn.innerText;
+  
+  if (btn.innerText === "Borrar") {
+    // Estado de alerta
+    btn.innerText = "¿Seguro?";
+    btn.classList.replace('bg-rose-500', 'bg-amber-500'); // Cambia a Naranja/Ámbar
+    
+    // Si el usuario no hace clic en 4 segundos, volvemos a la normalidad
+    setTimeout(() => {
+      if (btn) {
+        btn.innerText = "Borrar";
+        btn.classList.replace('bg-amber-500', 'bg-rose-500');
+      }
+    }, 4000);
+  } else {
+    // Paso 2: El usuario hizo clic en "¿Seguro?", procedemos a borrar
+    ejecutarBorrado(fila);
+  }
+}
+
+/**
+ * Paso 2: Ejecuta la acción en el servidor
+ */
+function ejecutarBorrado(fila) {
+  const btn = document.getElementById(`btn-borrar-${fila}`);
+  btn.innerText = "Eliminando...";
+  btn.disabled = true;
+
+  google.script.run
+    .withSuccessHandler(data => {
+      // Al renderizar la tabla de nuevo con los datos actualizados,
+      // la fila simplemente desaparecerá suavemente.
+      renderizar(data);
+    })
+    .withFailureHandler(() => {
+      btn.innerText = "Error";
+      btn.classList.replace('bg-amber-500', 'bg-red-700');
+    })
+    .eliminarUsuario(fila);
+}
+
+function filtrarUsuarios() {
+  const terminoBusqueda = document.getElementById('buscador').value.toLowerCase();
+  // Filtramos sobre el array 'todosLosUsuarios' que ya tenemos cargado
+  const usuariosFiltrados = todosLosUsuarios.filter(u => {
+    return u.nombre.toLowerCase().includes(terminoBusqueda) || 
+           u.mail.toLowerCase().includes(terminoBusqueda);
+  });
+  
+  // Volvemos a renderizar la tabla con los resultados filtrados
+  renderizar(usuariosFiltrados);
+}
+  </script>
+</body>
+
+</html>
