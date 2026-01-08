@@ -1,0 +1,81 @@
+<!-- se guardan como html para poder incluir el script en google apps script -->
+
+<style>
+  /* =========================
+     BASE
+     ========================= */
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  /* =========================
+     TABLA RESPONSIVE
+     ========================= */
+  .tabla-responsive {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* =========================
+     ENCABEZADO FIJO
+     ========================= */
+  thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f2f2f2;
+    z-index: 5;
+  }
+
+  /* =========================
+     FILAS
+     ========================= */
+  tbody tr:nth-child(even) td {
+    background-color: #f9f9f9;
+  }
+
+  /* =========================
+     FILTROS
+     ========================= */
+  .filtros {
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* =========================
+     PAGINACIÓN
+     ========================= */
+  #paginacion button {
+    margin: 2px;
+    padding: 4px 8px;
+  }
+
+  #paginacion button.activo {
+    font-weight: bold;
+    background-color: #d0d6e5;
+  }
+
+  /* =========================
+     RESPONSIVE
+     ========================= */
+  @media (max-width: 768px) {
+    table {
+      font-size: 12px;
+    }
+  }
+</style>
