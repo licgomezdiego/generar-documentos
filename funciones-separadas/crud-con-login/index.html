@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 20px; }
+      
+      /* Login */
+      #login-container { 
+        max-width: 400px; margin: 100px auto; padding: 30px; 
+        background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        text-align: center;
+      }
+      .input-group { margin-bottom: 15px; }
+      .input-group input { width: 100%; padding: 10px; box-sizing: border-box; }
+      
+      /* Admin Panel */
+      #admin-panel { display: none; }
+      .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+      
+      /* Tabla y Buscador */
+      table { width: 100%; border-collapse: collapse; background: white; }
+      th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+      th { background-color: #2c3e50; color: white; }
+      input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+      
+      /* Botones */
+      .btn-add { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+      .btn-save { background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+      .btn-del { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+      button:disabled { background: #ccc; }
+    </style>
+  </head>
+  <body>
+
+    <div id="login-container">
+      <h2>🔐 Acceso Admin</h2>
+      <div class="input-group">
+        <input type="text" id="userLogin" placeholder="Usuario">
+      </div>
+      <div class="input-group">
+        <input type="password" id="passLogin" placeholder="Contraseña">
+      </div>
+      <button onclick="login()" id="btnLogin" style="width:100%; padding:10px; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer;">
+        Entrar
+      </button>
+      <p id="error-login" style="color:red; display:none; margin-top:10px;"></p>
+    </div>
+
+    <div id="admin-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Panel de Gestión de Usuarios</h2>
+        <button onclick="logout()" style="background:#95a5a6; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Cerrar Sesión</button>
+      </div>
+      
+      <div class="card">
+        <h3>➕ Nuevo Usuario</h3>
+        <input type="text" id="nuevoUser" placeholder="Nombre">
+        <input type="text" id="nuevoPass" placeholder="Contraseña">
+        <button class="btn-add" id="btnCrear" onclick="nuevoRegistro()">Crear</button>
+      </div>
+
+      <div class="card">
+        <input type="text" id="buscador" placeholder="🔍 Buscar usuario..." onkeyup="filtrar()" style="width:100%; padding:12px; box-sizing:border-box;">
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Password</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoTabla">
+            <tr><td colspan="3">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      let todosLosUsuarios = [];
+
+      // --- LÓGICA DE LOGIN ---
+      function login() {
+        const u = document.getElementById('userLogin').value;
+        const p = document.getElementById('passLogin').value;
+        const btn = document.getElementById('btnLogin');
+        const error = document.getElementById('error-login');
+
+        btn.disabled = true;
+        btn.innerText = 'Verificando...';
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res.success) {
+              document.getElementById('login-container').style.display = 'none';
+              document.getElementById('admin-panel').style.display = 'block';
+              cargarDatosIniciales(); 
+            } else {
+              error.innerText = "Credenciales incorrectas";
+              error.style.display = 'block';
+              btn.disabled = false;
+              btn.innerText = 'Entrar';
+            }
+          })
+          .verificarCredenciales(u, p);
+      }
+
+      function logout() {
+        // Para App Script, esto limpia el estado volviendo a cargar la URL
+        google.script.run.withSuccessHandler(function(url){
+          window.open(url, '_top');
+        }).getScriptUrl();
+      }
+
+      // --- LÓGICA DE DATOS ---
+      function cargarDatosIniciales() {
+        google.script.run.withSuccessHandler(function(data) {
+          todosLosUsuarios = data;
+          renderizarTabla(data);
+        }).obtenerUsuarios();
+      }
+
+      function renderizarTabla(lista) {
+        const cuerpo = document.getElementById('cuerpoTabla');
+        cuerpo.innerHTML = '';
+        lista.forEach((user) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><input type="text" id="user-${user.filaOriginal}" value="${user.nombre}"></td>
+            <td><input type="text" id="pass-${user.filaOriginal}" value="${user.password}"></td>
+            <td>
+              <button class="btn-save" onclick="guardar(${user.filaOriginal})">Guardar</button>
+              <button class="btn-del" onclick="confirmarEliminar(${user.filaOriginal}, '${user.nombre}')">Borrar</button>
+            </td>
+          `;
+          cuerpo.appendChild(tr);
+        });
+      }
+
+      function filtrar() {
+        const texto = document.getElementById('buscador').value.toLowerCase();
+        const filtrados = todosLosUsuarios.filter(u => u.nombre.toLowerCase().includes(texto));
+        renderizarTabla(filtrados);
+      }
+
+      function guardar(fila) {
+        const n = document.getElementById(`user-${fila}`).value;
+        const p = document.getElementById(`pass-${fila}`).value;
+        google.script.run.withSuccessHandler(() => alert("Actualizado")).actualizarUsuario(fila, n, p);
+      }
+
+      function nuevoRegistro() {
+        const n = document.getElementById('nuevoUser').value;
+        const p = document.getElementById('nuevoPass').value;
+        google.script.run.withSuccessHandler(data => {
+          todosLosUsuarios = data;
+          renderizarTabla(data);
+          alert("Creado");
+        }).crearUsuario(n, p);
+      }
+
+      function confirmarEliminar(fila, nombre) {
+        if (confirm("¿Borrar a " + nombre + "?")) {
+          google.script.run.withSuccessHandler(() => cargarDatosIniciales()).eliminarUsuario(fila);
+        }
+      }
+    </script>
+  </body>
+</html>
